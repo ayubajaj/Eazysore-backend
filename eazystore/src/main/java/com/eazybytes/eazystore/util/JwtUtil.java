@@ -2,6 +2,7 @@ package com.eazybytes.eazystore.util;
 
 
 import com.eazybytes.eazystore.constants.ApplicationConstants;
+import com.eazybytes.eazystore.entity.Customer;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class JwtUtil {
     private final Environment env;
      public String generateJwtToken(Authentication authentication){
          try {
-             String secret=env.getProperty(ApplicationConstants.JWT_SECRET_KEY,ApplicationConstants.JWT_SECRET_DETAIL_VALUE);
+             String secret=env.getProperty(ApplicationConstants.JWT_SECRET_KEY,ApplicationConstants.JWT_SECRET_DEFAULT_VALUE);
              
              // Validate secret key length
              if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
@@ -33,15 +34,17 @@ public class JwtUtil {
              
              log.debug("JWT Secret key length: {} bytes", secret.getBytes(StandardCharsets.UTF_8).length);
              SecretKey secretKey= Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-             User fetchedUser= (User) authentication.getPrincipal();
+             Customer fetchedCustomer= (Customer) authentication.getPrincipal();
              
              String jwt= Jwts.builder().issuer("EasyBank").subject("JWT Token").
-                     claim("username",fetchedUser.getUsername())
+                     claim("username",fetchedCustomer.getName())
+                     .claim("email",fetchedCustomer.getEmail())
+                     .claim("mobileNumber",fetchedCustomer.getMobileNumber())
                      .issuedAt(new java.util.Date())
                      .expiration(new java.util.Date((new java.util.Date()).getTime()+60*60*1000))
                      .signWith(secretKey).compact();
              
-             log.debug("JWT token generated successfully for user: {}", fetchedUser.getUsername());
+             log.debug("JWT token generated successfully for user: {}", fetchedCustomer.getName());
              return jwt;
          } catch (Exception e) {
              log.error("Error generating JWT token: {}", e.getMessage(), e);
