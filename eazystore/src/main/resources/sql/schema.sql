@@ -19,11 +19,13 @@ CREATE TABLE IF NOT EXISTS contacts
     email         VARCHAR(100)                          NOT NULL,
     mobile_number VARCHAR(15)                           NOT NULL,
     message       VARCHAR(500)                          NOT NULL,
+    status        VARCHAR(50)                           NOT NULL,
     created_at    TIMESTAMP   DEFAULT CURRENT_TIMESTAMP NOT NULL,
     created_by    VARCHAR(20)                           NOT NULL,
     updated_at    TIMESTAMP   DEFAULT NULL,
     updated_by    VARCHAR(20) DEFAULT NULL
     );
+
 CREATE TABLE IF NOT EXISTS customers
     customer_id
     BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -70,14 +72,58 @@ CREATE TABLE IF NOT EXISTS address
 
 CREATE TABLE IF NOT EXISTS roles (
                                      role_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                     customer_id BIGINT NOT NULL,
                                      name        VARCHAR(50) NOT NULL,
                                      created_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP NOT NULL,
                                      created_by VARCHAR(20) NOT NULL,
                                      updated_at TIMESTAMP   DEFAULT NULL,
                                      updated_by VARCHAR(20) DEFAULT NULL,
-                                     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+                                     Unique Key unique_name(name)
+
+);
+CREATE TABLE if not exists  customer_roles(
+    customer_id BIGINT NOT NULL ,
+    role_id BIGINT NOT NULL ,
+    primary key (customer_id,role_id),
+    foreign key (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE ,
+    FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE
+);
+INSERT into roles (name, created_at, created_by)
+VALUES ('ROLE_USER', CURRENT_TIMESTAMP,'DBA');
+
+INSERT into roles (name, created_at, created_by)
+VALUES (n'ROLE_ADMIN', CURRENT_TIMESTAMP, 'DBA');
+INSERT into roles (name, created_at, created_by)
+VALUES ( 'ROLE_OPS_ENG', CURRENT_TIMESTAMP, 'DBA');
+INSERT into roles (name, created_at, created_by)
+VALUES ( 'ROLE_QA_ENG', CURRENT_TIMESTAMP, 'DBA');
+
+
+CREATE TABLE IF NOT EXISTS orders
+(
+    order_id       BIGINT AUTO_INCREMENT PRIMARY KEY,
+    customer_id    BIGINT NOT NULL,
+    total_price    DECIMAL(10, 2)                        NOT NULL,
+    payment_id     VARCHAR(200)                          NOT NULL,
+    payment_status VARCHAR(50)                           NOT NULL,
+    order_status   VARCHAR(50)                           NOT NULL,
+    created_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_by     VARCHAR(20)                           NOT NULL,
+    updated_at     TIMESTAMP   DEFAULT NULL,
+    updated_by     VARCHAR(20) DEFAULT NULL,
+    FOREIGN KEY (customer_id) REFERENCES customers (customer_id)
 );
 
-INSERT INTO roles (customer_id, name, created_at, created_by)
-VALUES (8, 'ROLE_ADMIN', CURRENT_TIMESTAMP, 'Anonymous user');
+CREATE TABLE IF NOT EXISTS order_items
+(
+    order_item_id   BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id        BIGINT NOT NULL,
+    product_id      BIGINT NOT NULL,
+    quantity        INT NOT NULL,
+    price           DECIMAL(10, 2) NOT NULL,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_by      VARCHAR(20)    NOT NULL,
+    updated_at      TIMESTAMP      DEFAULT NULL,
+    updated_by      VARCHAR(20)    DEFAULT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);

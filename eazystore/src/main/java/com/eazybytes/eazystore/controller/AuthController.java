@@ -1,12 +1,10 @@
 package com.eazybytes.eazystore.controller;
 
-import com.eazybytes.eazystore.dto.LoginRequestDto;
-import com.eazybytes.eazystore.dto.LoginResponseDto;
-import com.eazybytes.eazystore.dto.RegisterRequestDto;
-import com.eazybytes.eazystore.dto.UserDto;
+import com.eazybytes.eazystore.dto.*;
 import com.eazybytes.eazystore.entity.Customer;
 import com.eazybytes.eazystore.entity.Role;
 import com.eazybytes.eazystore.repository.CustomerRepository;
+import com.eazybytes.eazystore.repository.RoleRepository;
 import com.eazybytes.eazystore.util.JwtUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +42,7 @@ public class AuthController {
     private  final JwtUtil jwtUtil;
     private final CompromisedPasswordChecker compromisedPasswordChecker;
     private final CustomerRepository customerRepository;
+    private final RoleRepository roleRepository;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> apilogin(@RequestBody LoginRequestDto loginRequestDto) {
@@ -57,7 +56,12 @@ public class AuthController {
             userDto.setRole(authentication.getAuthorities().stream().map(
                     GrantedAuthority::getAuthority).collect(Collectors.joining(","))
             );
+            if (loggedInUser.getAddress() != null) {
+                AddressDto addressDto=new AddressDto();
+                BeanUtils.copyProperties(loggedInUser.getAddress(),addressDto);
+                userDto.setAddress(addressDto);
 
+            }
             String jwtToken= jwtUtil.generateJwtToken(authentication);
             log.debug("JWT Token: {}", jwtToken);
 
@@ -105,9 +109,8 @@ public class AuthController {
         Customer customer=new Customer();
         BeanUtils.copyProperties(registerRequestDto,customer);
         customer.setPasswordHash(passwordEncoder.encode(registerRequestDto.getPassword()));
-        Role role=new Role();
-        role.setName("ROLE_USER");
-        customer.setRoles(Set.of(role));
+roleRepository.findByName("ROLE_USER").ifPresent(role->customer.setRoles(Set.of(role)));
+
         customerRepository.save(customer);
     return  ResponseEntity.status(HttpStatus.CREATED).body("Successfully registered");
 

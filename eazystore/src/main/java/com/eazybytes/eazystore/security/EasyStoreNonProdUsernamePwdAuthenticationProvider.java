@@ -10,18 +10,18 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-@Profile("prod")
+import java.util.List;
+import java.util.Set;
+
+@Profile("!prod")
 @Component
 @RequiredArgsConstructor
-public class EasyStoreUsernamePwdAuthenticationProvider implements AuthenticationProvider {
+public class EasyStoreNonProdUsernamePwdAuthenticationProvider implements AuthenticationProvider {
 
 private final CustomerRepository customerRepository;
 private final PasswordEncoder passwordEncoder;
@@ -31,20 +31,18 @@ private final PasswordEncoder passwordEncoder;
         String username = authentication.getName();
         String pwd=authentication.getCredentials().toString();
         Customer customer=customerRepository.findByEmail(username).orElseThrow(
-                ()->new UsernameNotFoundException(
+                 ()->new UsernameNotFoundException(
                         "User details not found"+username
                 )
 
         );
         Set<Role> roles=customer.getRoles();
         List<SimpleGrantedAuthority> grantedAuthorities=roles.stream().map(role->new SimpleGrantedAuthority(role.getName())).toList();
-        if(passwordEncoder.matches(pwd,customer.getPasswordHash())){
+
             return new UsernamePasswordAuthenticationToken(customer,null,grantedAuthorities);
 
-        }
-        else{
-            throw new BadCredentialsException("Invalid username or password");
-        }
+
+
 
     }
 
